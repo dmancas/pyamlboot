@@ -1,64 +1,109 @@
 #!/bin/bash
 setenv bootcmd
 setenv autoload no
-echo "READING FIRMWARE FROM USB"
-if fatload usb 0 $kernel_addr_r aml-s805x-ac.bin; then
-	echo "READING FIRMWARE FROM EMMC"
-	if fatload mmc 0 $ramdisk_addr_r aml-s805x-ac.bin; then
-		echo "COMPARING FIRMWARE"
-		if cmp.b $kernel_addr_r $ramdisk_addr_r $filesize; then
-			echo "DETECTING SPI NOR"
-			if sf probe; then
-				if sf read $ramdisk_addr_r 0 $filesize; then
-					if cmp.b $kernel_addr_r $ramdisk_addr_r $filesize; then
-						echo "SPI NOR MATCHES"
-						if dhcp; then
-							echo "SUCCESSFUL!"
-							fatload usb 0 $kernel_addr_r OK.BMP
-						else
-							echo "NETWORK FAILED!"
-							fatload usb 0 $kernel_addr_r NETWORK.BMP
-						fi
-					else
-						echo "ERASING SPI NOR"
-						if sf erase 0 +$filesize; then
-							echo "WRITING FIRMWARE TO SPI NOR"
-							if sf write $fileaddr 0 $filesize; then
-								echo "GETTING IP FROM DHCP"
-								if dhcp; then
-									echo "SUCCESSFUL!"
-									fatload usb 0 $kernel_addr_r OK.BMP
-								else
-									echo "NETWORK FAILED!"
-									fatload usb 0 $kernel_addr_r NETWORK.BMP
-								fi
-							else
-								echo "FLASH FAILED!"
-								fatload usb 0 $kernel_addr_r SPINORWRITE.BMP
-							fi
-						else
-							echo "ERASE FAILED!"
-							fatload usb 0 $kernel_addr_r SPINORERASE.BMP
-						fi
-					fi
-				else
-					echo "SPI READ FAILED!"
-					fatload usb 0 $kernel_addr_r SPINORREAD.BMP
-				fi
-			else
-				echo "SPI PROBE FAILED!"
-				fatload usb 0 $kernel_addr_r SPINORPROBE.BMP
-			fi
-		else
-			echo "USB EMMC MISMATCH!"
-			fatload usb 0 $kernel_addr_r USBEMMC.BMP
-		fi
-	else
-		echo "EMMC FAILED!"
-		fatload usb 0 $kernel_addr_r EMMC.BMP
-	fi
+firmware=aml-s905x-cc.bin
+echo "READING FIRMWARE FROM USB 1"
+fatload usb 0 $kernel_addr_r $firmware
+if test $? -eq 1; then
+	echo "USB LOAD 1 FAILED"
+	bmp display $kernel_addr_r
+	sleep 9999
+fi
+afs=$filesize
+echo "READING FIRMWARE FROM USB 2"
+fatload usb 1 $ramdisk_addr_r $firmware
+if test $? -eq 1; then
+	echo "USB LOAD 2 FAILED"
+	fatload usb 0 $kernel_addr_r USBLOAD2.BMP
+	bmp display $kernel_addr_r
+	sleep 9999
+fi
+bfs=$filesize
+if test "${afs}" != "${bfs}"; then 
+	echo "USB LOAD 2 MISMATCH FILESIZE"
+	fatload usb 0 $kernel_addr_r USBLOAD-MS2.BMP
+	bmp display $kernel_addr_r
+	sleep 9999
+fi
+cmp.b $kernel_addr_r $ramdisk_addr_r $afs;
+if test $? -eq 1; then
+	echo "USB LOAD 2 MISMATCH FILECONTENT"
+	fatload usb 0 $kernel_addr_r USBLOAD-MC2.BMP
+	bmp display $kernel_addr_r
+	sleep 9999
+fi
+echo "READING FIRMWARE FROM USB 3"
+fatload usb 2 $ramdisk_addr_r $firmware
+if test $? -eq 1; then
+	echo "USB LOAD 3 FAILED"
+	fatload usb 0 $kernel_addr_r USBLOAD3.BMP
+	bmp display $kernel_addr_r
+	sleep 9999
+fi
+bfs=$filesize
+if test "${afs}" != "${bfs}"; then
+	echo "USB LOAD 3 MISMATCH FILESIZE"
+	fatload usb 0 $kernel_addr_r USBLOAD-MS3.BMP
+	bmp display $kernel_addr_r
+	sleep 9999
+fi
+cmp.b $kernel_addr_r $ramdisk_addr_r $afs
+if test $? -eq 1; then
+	echo "USB LOAD 3 MISMATCH FILECONTENT"
+	fatload usb 0 $kernel_addr_r USBLOAD-MC3.BMP
+	bmp display $kernel_addr_r
+	sleep 9999
+fi
+echo "READING FIRMWARE FROM SD"
+fatload mmc 0 $ramdisk_addr_r $firmware
+if test $? -eq 1; then
+	echo "SD LOAD FAILED"
+	fatload usb 0 $kernel_addr_r SDLOAD.BMP
+	bmp display $kernel_addr_r
+	sleep 9999
+fi
+bfs=$filesize
+if test "${afs}" != "${bfs}"; then
+	echo "SD LOAD MISMATCH FILESIZE"
+	fatload usb 0 $kernel_addr_r SDLOAD-MS.BMP
+	bmp display $kernel_addr_r
+	sleep 9999
+fi
+cmp.b $kernel_addr_r $ramdisk_addr_r $afs
+if test $? -eq 1; then
+	echo "SD LOAD MISMATCH FILECONTENT"
+	fatload usb 0 $kernel_addr_r SDLOAD-MC.BMP
+	bmp display $kernel_addr_r
+	sleep 9999
+fi
+echo "READING FIRMWARE FROM EMMC"
+fatload mmc 1 $ramdisk_addr_r $firmware
+if test $? -eq 1; then
+	echo "EMMC LOAD FAILED"
+	fatload usb 0 $kernel_addr_r EMMCLOAD.BMP
+	bmp display $kernel_addr_r
+	sleep 9999
+fi
+bfs=$filesize
+if test "${afs}" != "${bfs}"; then
+	echo "EMMC LOAD MISMATCH FILESIZE"
+	fatload usb 0 $kernel_addr_r EMMCLOAD-MS.BMP
+	bmp display $kernel_addr_r
+	sleep 9999
+fi
+cmp.b $kernel_addr_r $ramdisk_addr_r $afs
+if test $? -eq 1; then
+	echo "EMMC LOAD MISMATCH FILECONTENT"
+	fatload usb 0 $kernel_addr_r EMMCLOAD-MC.BMP
+	bmp display $kernel_addr_r
+	sleep 9999
+fi
+if dhcp; then
+	echo "SUCCESSFUL!"
+	fatload usb 0 $kernel_addr_r OK.BMP
 else
-	echo "USB LOAD FAILED"
+	echo "NETWORK FAILED!"
+	fatload usb 0 $kernel_addr_r NETWORK.BMP
 fi
 bmp display $kernel_addr_r
 sleep 9999
