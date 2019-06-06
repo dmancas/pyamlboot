@@ -15,6 +15,6 @@ cd $SOURCE_DIR/../..
 
 echo "`date '+%Y-%m-%d %H:%M:%S'` START" >> $SOURCE_DIR/run.log
 
-./boot.py "$1" --image $SOURCE_DIR/../bmp-assets/USBLOAD.BMP --script $SOURCE_DIR/u-boot.scr
+./boot.py "$1" --image $SOURCE_DIR/../../files/images/USBLOAD.BMP --script $SOURCE_DIR/u-boot.scr
 
 echo "`date '+%Y-%m-%d %H:%M:%S'` END" >> $SOURCE_DIR/run.log

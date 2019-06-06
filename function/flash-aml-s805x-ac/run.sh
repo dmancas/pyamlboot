@@ -15,6 +15,6 @@ cd $SOURCE_DIR/../..
 
 echo "`date '+%Y-%m-%d %H:%M:%S'` START" >> $SOURCE_DIR/run.log
 
-./boot.py "$1" --ramfs $SOURCE_DIR/../../files/libretech-ac/u-boot.bin.spi --fdt $SOURCE_DIR/../bmp-assets/OK.BMP --script $SOURCE_DIR/u-boot.scr
+./boot.py "$1" --ramfs $SOURCE_DIR/../../files/libretech-ac/u-boot.bin.spi --fdt $SOURCE_DIR/../../files/images/OK.BMP --script $SOURCE_DIR/u-boot.scr
 
 echo "`date '+%Y-%m-%d %H:%M:%S'` END" >> $SOURCE_DIR/run.log
